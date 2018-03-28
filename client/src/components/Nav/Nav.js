@@ -1,6 +1,6 @@
 import React from "react";
 
-const Nav = () => (
+const Nav = () =>
   <nav className="navbar navbar-inverse navbar-top">
     <div className="container-fluid">
       <div className="navbar-header">
@@ -14,7 +14,6 @@ const Nav = () => (
         </a>
       </div>
     </div>
-  </nav>
-);
+  </nav>;
 
 export default Nav;

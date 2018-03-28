@@ -2,7 +2,7 @@ import React from "react";
 import { Col, Row, Container } from "../../components/Grid";
 import Jumbotron from "../../components/Jumbotron";
 
-const NoMatch = () => (
+const NoMatch = () =>
   <Container fluid>
     <Row>
       <Col size="md-12">
@@ -16,7 +16,6 @@ const NoMatch = () => (
         </Jumbotron>
       </Col>
     </Row>
-  </Container>
-);
+  </Container>;
 
 export default NoMatch;
