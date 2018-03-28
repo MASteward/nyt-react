@@ -9,11 +9,18 @@ import { Input, TextArea, FormBtn } from "../../components/Form";
 
 class Articles extends Component {
   state = {
+    topic: "",
+    startYear: "",
+    endYear: "",
     articles: [],
+    page: '0',
     title: "",
-    author: "",
-    synopsis: ""
+    date: "",
+    url: "",
+    previousSearch: {},
+    noResults: false
   };
+
 
   componentDidMount() {
     this.loadArticles();
@@ -22,7 +29,8 @@ class Articles extends Component {
   loadArticles = () => {
     API.getArticles()
       .then(res =>
-        this.setState({ articles: res.data, title: "", author: "", synopsis: "" })
+        this.setState({ articles: res.data, topic: ""})
+        // this.setState({ articles: res.data, topic: "", date: "", url: "" })
       )
       .catch(err => console.log(err));
   };
@@ -34,25 +42,80 @@ class Articles extends Component {
   };
 
   handleInputChange = event => {
-    const { name, value } = event.target;
-    this.setState({
-      [name]: value
-    });
+    let { name, value } = event.target;
+    this.setState({[name] : value})
   };
+
+  // handleInputChange = event => {
+  //   const { name, value } = event.target;
+  //   this.setState({
+  //     [name]: value
+  //   });
+  // };
 
   handleFormSubmit = event => {
     event.preventDefault();
-    if (this.state.title && this.state.author) {
-      API.saveArticle({
-        title: this.state.title,
-        author: this.state.author,
-        synopsis: this.state.synopsis
-      })
-        .then(res => this.loadArticles())
-        .catch(err => console.log(err));
-    }
+    let { topic, startYear, endYear } = this.state;
+    let query = { topic, startYear, endYear }
+    this.getArticles(query)
   };
+    // if (this.state.title && this.state.date) {
+    //   API.saveArticle({
+    //     title: this.state.title,
+    //     date: this.state.date,
+    //     url: this.state.url
+    //   })
+    //     .then(res => this.loadArticles())
+    //     .catch(err => console.log(err));
+    // }
+  // };
+  getArticles = query => {
+    //clearing the articles array if the user changes search terms
+    if (query.topic !== this.state.previousSearch.topic ||
+        query.endYear !==this.state.previousSearch.endYear ||
+        query.startYear !==this.state.previousSearch.startYear) {
+      this.setState({articles: []})
+    }
+    let { topic, startYear, endYear } = query
 
+    let queryUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?sort=newest&page=${this.state.page}`
+    let key = `&api-key=33c676fd7fd14e90a532f9698ab4dd4a`
+
+    //removing spaces and building the query url conditionally
+    //based on presence of optional search terms
+    if (topic.indexOf(' ')>=0) {
+      topic = topic.replace(/\s/g, '+');
+    }
+    if (topic){
+      queryUrl+= `&fq=${topic}`
+    }
+    if (startYear) {
+      queryUrl+= `&begin_date=${startYear}`
+    }
+    if (endYear){
+      queryUrl+= `&end_date=${endYear}`
+    }
+    queryUrl+=key;
+
+    //calling the API
+    API
+      .queryNYT(queryUrl)
+      .then(articles => {
+          //concatenating new articles to the current state of articles.  If empty will just show articles,
+          //but if search was done to get more, it shows all articles.  Also stores current search terms
+          //for conditional above, and sets the noarticles flag for conditional rendering of components below
+        this.setState({
+          articles: [...this.state.articles, ...articles.data.response.docs],
+          previousSearch: query,
+          topic: "",
+          startYear: "",
+          endYear: ""
+        }, function (){
+          this.state.articles.length === 0 ? this.setState({noarticles: true}) : this.setState({noarticles: false})
+        });
+    })
+    .catch(err=> console.log(err))
+  }
   render() {
     return (
       <Container fluid>
@@ -63,28 +126,30 @@ class Articles extends Component {
             </Jumbotron>
             <form>
               <Input
-                value={this.state.title}
                 onChange={this.handleInputChange}
-                name="title"
-                placeholder="Title (required)"
+                name='topic'
+                value={this.state.topic}
+                placeholder='Topic'
               />
               <Input
-                value={this.state.author}
                 onChange={this.handleInputChange}
-                name="author"
-                placeholder="Author (required)"
+                type='date'
+                name='startYear'
+                value={this.state.startYear}
+                placeholder='Start Year'
               />
-              <TextArea
-                value={this.state.synopsis}
+              <Input
                 onChange={this.handleInputChange}
-                name="synopsis"
-                placeholder="Synopsis (Optional)"
+                type='date'
+                name='endYear'
+                value={this.state.endYear}
+                placeholder='End Year'
               />
               <FormBtn
-                disabled={!(this.state.author && this.state.title)}
+                disabled={!(this.state.topic)}
                 onClick={this.handleFormSubmit}
-              >
-                Submit Article
+                type='info'
+                >Submit
               </FormBtn>
             </form>
           </Col>
@@ -98,7 +163,7 @@ class Articles extends Component {
                   <ListItem key={article._id}>
                     <Link to={"/articles/" + article._id}>
                       <strong>
-                        {article.title} by {article.author}
+                        {article.title} by {article.date}
                       </strong>
                     </Link>
                     <DeleteBtn onClick={() => this.deleteArticle(article._id)} />
@@ -106,7 +171,7 @@ class Articles extends Component {
                 ))}
               </List>
             ) : (
-              <h3>No Results to Display</h3>
+              <h3>No articles to Display</h3>
             )}
           </Col>
         </Row>
