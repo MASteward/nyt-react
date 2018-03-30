@@ -11,17 +11,13 @@ const Nav = () =>
           </Link>
         </div>
         <ul className="nav navbar-nav">
-          <li className={
-            window.location.pathname === "/" || window.location.pathname === "/articles" ? "active" : "" }>
+          <li className={ window.location.pathname === "/" || window.location.pathname === "/articles" ? "active" : "" }>
             <Link to="/">Articles</Link>
           </li>
-          <li className={window.pathname === "/saved" ? "active" : ""}>
+          <li className={ window.pathname === "/saved" ? "active" : "" }>
             <Link to="/saved">Saved Articles</Link>
           </li>
         </ul>
-        {/* <a href="/" className="navbar-brand">
-          Headlines
-        </a> */}
       </div>
     </div>
   </nav>;

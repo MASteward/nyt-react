@@ -22,36 +22,11 @@ class Articles extends Component {
     noResults: false
   };
 
-
-  // componentDidMount() {
-  //   this.loadArticles();
-  // }
-  //
-  // loadArticles = () => {
-  //   API.getArticles()
-  //     .then(res =>
-  //       this.setState({
-  //         articles: res.data,
-  //         topic: "",
-  //         summary: "",
-  //         date: "",
-  //         url: ""
-  //       })
-  //     )
-  //     .catch(err => console.log(err));
-  // };
-
   handleInputChange = event => {
     let { name, value } = event.target;
     this.setState({[name] : value})
   };
 
-  // handleInputChange = event => {
-  //   const { name, value } = event.target;
-  //   this.setState({
-  //     [name]: value
-  //   });
-  // };
 
   handleFormSubmit = event => {
     event.preventDefault();
@@ -80,6 +55,7 @@ class Articles extends Component {
 
     let queryUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?sort=newest&page=${this.state.page}`;
     let key = `&api-key=b9f91d369ff59547cd47b931d8cbc56b:0:74623931`;
+
     if (topic.indexOf(' ')>=0) {
       topic = topic.replace(/\s/g, '+');
     }
@@ -146,7 +122,8 @@ class Articles extends Component {
                 disabled={!(this.state.topic)}
                 onClick={this.handleFormSubmit}
                 type='info'
-                >Submit
+              >
+                Submit
               </FormBtn>
             </form>
           </Col>
