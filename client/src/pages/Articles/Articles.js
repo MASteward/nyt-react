@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import DeleteBtn from "../../components/DeleteBtn";
+import SaveBtn from "../../components/SaveBtn";
 import Jumbotron from "../../components/Jumbotron";
 import API from "../../utils/API";
 import { Link } from "react-router-dom";
 import { Col, Row, Container } from "../../components/Grid";
 import { List, ListItem } from "../../components/List";
-import { Input, TextArea, FormBtn } from "../../components/Form";
+import { Input, FormBtn } from "../../components/Form";
 
 class Articles extends Component {
   state = {
@@ -22,24 +23,23 @@ class Articles extends Component {
   };
 
 
-  componentDidMount() {
-    this.loadArticles();
-  }
-
-  loadArticles = () => {
-    API.getArticles()
-      .then(res =>
-        this.setState({ articles: res.data, topic: ""})
-        // this.setState({ articles: res.data, topic: "", date: "", url: "" })
-      )
-      .catch(err => console.log(err));
-  };
-
-  deleteArticle = id => {
-    API.deleteArticle(id)
-      .then(res => this.loadArticles())
-      .catch(err => console.log(err));
-  };
+  // componentDidMount() {
+  //   this.loadArticles();
+  // }
+  //
+  // loadArticles = () => {
+  //   API.getArticles()
+  //     .then(res =>
+  //       this.setState({
+  //         articles: res.data,
+  //         topic: "",
+  //         summary: "",
+  //         date: "",
+  //         url: ""
+  //       })
+  //     )
+  //     .catch(err => console.log(err));
+  // };
 
   handleInputChange = event => {
     let { name, value } = event.target;
@@ -57,43 +57,40 @@ class Articles extends Component {
     event.preventDefault();
     let { topic, startYear, endYear } = this.state;
     let query = { topic, startYear, endYear }
-    this.getArticles(query)
+    this.getHeadlines(query)
   };
-    // if (this.state.title && this.state.date) {
-    //   API.saveArticle({
-    //     title: this.state.title,
-    //     date: this.state.date,
-    //     url: this.state.url
-    //   })
-    //     .then(res => this.loadArticles())
-    //     .catch(err => console.log(err));
-    // }
-  // };
-  getArticles = query => {
-    //clearing the articles array if the user changes search terms
-    if (query.topic !== this.state.previousSearch.topic ||
-        query.endYear !==this.state.previousSearch.endYear ||
-        query.startYear !==this.state.previousSearch.startYear) {
-      this.setState({articles: []})
+
+  saveArticle = article => {
+    let savedArticle = {
+      title: article.headline.main,
+      summary: article.snippet,
+      url: article.web_url,
+      date: article.pub_date
     }
-    let { topic, startYear, endYear } = query
+    API.saveArticle(savedArticle)
+    .then(res => console.log(res))
+    .catch(err => console.log(err));
+  }
 
-    let queryUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?sort=newest&page=${this.state.page}`
-    let key = `&api-key=33c676fd7fd14e90a532f9698ab4dd4a`
+  getHeadlines = query => {
+    if (query.topic !== this.state.previousSearch.topic) {
+      this.setState({articles: []});
+    }
+    let { topic, startYear, endYear } = query;
 
-    //removing spaces and building the query url conditionally
-    //based on presence of optional search terms
+    let queryUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?sort=newest&page=${this.state.page}`;
+    let key = `&api-key=b9f91d369ff59547cd47b931d8cbc56b:0:74623931`;
     if (topic.indexOf(' ')>=0) {
       topic = topic.replace(/\s/g, '+');
     }
     if (topic){
-      queryUrl+= `&fq=${topic}`
+      queryUrl+= `&fq=${topic}`;
     }
     if (startYear) {
-      queryUrl+= `&begin_date=${startYear}`
+      queryUrl+= `&begin_date=${startYear}`;
     }
     if (endYear){
-      queryUrl+= `&end_date=${endYear}`
+      queryUrl+= `&end_date=${endYear}`;
     }
     queryUrl+=key;
 
@@ -101,15 +98,15 @@ class Articles extends Component {
     API
       .queryNYT(queryUrl)
       .then(articles => {
-          //concatenating new articles to the current state of articles.  If empty will just show articles,
-          //but if search was done to get more, it shows all articles.  Also stores current search terms
-          //for conditional above, and sets the noarticles flag for conditional rendering of components below
         this.setState({
           articles: [...this.state.articles, ...articles.data.response.docs],
           previousSearch: query,
           topic: "",
           startYear: "",
-          endYear: ""
+          endYear: "",
+          title: "",
+          date: "",
+          url: ""
         }, function (){
           this.state.articles.length === 0 ? this.setState({noarticles: true}) : this.setState({noarticles: false})
         });
@@ -120,9 +117,9 @@ class Articles extends Component {
     return (
       <Container fluid>
         <Row>
-          <Col size="md-6">
+          <Col size="md-12">
             <Jumbotron>
-              <h1>What Articles Should I Read?</h1>
+              <h1>New York Times</h1>
             </Jumbotron>
             <form>
               <Input
@@ -153,20 +150,31 @@ class Articles extends Component {
               </FormBtn>
             </form>
           </Col>
-          <Col size="md-6 sm-12">
-            <Jumbotron>
-              <h1>Articles On My List</h1>
-            </Jumbotron>
+        </Row>
+        <Row>
+          <Col size="md-12 sm-12">
+            <h1>Headlines</h1>
             {this.state.articles.length ? (
               <List>
                 {this.state.articles.map(article => (
                   <ListItem key={article._id}>
-                    <Link to={"/articles/" + article._id}>
-                      <strong>
-                        {article.title} by {article.date}
-                      </strong>
+                    <SaveBtn onClick={() => this.saveArticle(article)} />
+                    <Link to={"/articles/" + article.web_url}>
+                      <h3>
+                        <strong>
+                          {article.headline.main}
+                        </strong>
+                      </h3>
                     </Link>
-                    <DeleteBtn onClick={() => this.deleteArticle(article._id)} />
+                    <div>
+                      <p>
+                        {article.snippet}
+                      </p>
+                      <p>
+                        {article.pub_date}
+                      </p>
+                    </div>
+
                   </ListItem>
                 ))}
               </List>

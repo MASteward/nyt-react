@@ -2,7 +2,7 @@ import axios from "axios";
 
 export default {
   // Gets all articles
-  getArticles: function() {
+  getSavedArticles: function() {
     return axios.get("/api/articles");
   },
   // Gets the article with the given id
@@ -11,6 +11,7 @@ export default {
   },
   // Deletes the article with the given id
   deleteArticle: function(id) {
+    console.log(id);
     return axios.delete("/api/articles/" + id);
   },
   // Saves a article to the database
